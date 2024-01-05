@@ -13,7 +13,6 @@ public class Appointment
     public Customer Customer { get; set; }
     [Required]
     public DateTime Scheduled { get; set; }
-    public decimal TotalCost { get; set; }
     [Required]
     public bool IsComplete { get; set; }
     [Required]
