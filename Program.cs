@@ -319,6 +319,61 @@ app.MapGet("/api/stylists", (HillarysHairSalonDbContext db) =>
 });
 
 // 7. Endpoint to get a Stylist by Id
+app.MapGet("/api/stylists/{id}", (HillarysHairSalonDbContext db, int id) =>
+{
+    var stylist = db.Stylists
+        .Include(s => s.Appointments)
+            .ThenInclude(a => a.Customer)
+            .Include(s => s.Appointments)
+                .ThenInclude(a => a.AppointmentServices)
+                    .ThenInclude(aserv => aserv.Service)
+        .SingleOrDefault(s => s.Id == id);
+
+    return Results.Ok(new StylistDTO
+    {
+        Id = stylist.Id,
+        FirstName = stylist.FirstName,
+        LastName = stylist.LastName,
+        PhoneNumber = stylist.PhoneNumber,
+        Email = stylist.Email,
+        Password = stylist.Password,
+        StartDate = stylist.StartDate,
+        EndDate = stylist.EndDate,
+        IsActive = stylist.IsActive,
+        IsAdmin = stylist.IsAdmin,
+        Appointments = stylist.Appointments.Select(a => new AppointmentDTO
+        {
+            Id = a.Id,
+            StylistId = a.StylistId,
+            Stylist = null,
+            CustomerId = a.CustomerId,
+            Customer = new CustomerDTO
+            {
+                Id = a.Customer.Id,
+                FirstName = a.Customer.FirstName,
+                LastName = a.Customer.LastName,
+                PhoneNumber = a.Customer.PhoneNumber,
+                Email = a.Customer.Email,
+                Appointments = null
+            },
+            Scheduled = a.Scheduled,
+            IsComplete = a.IsComplete,
+            IsCanceled = a.IsCanceled,
+            AppointmentServices = a.AppointmentServices.Select(aserv => new AppointmentServiceDTO
+            {
+                Id = aserv.Id,
+                AppointmentId = aserv.AppointmentId,
+                ServiceId = aserv.ServiceId,
+                Service = new ServiceDTO
+                {
+                    Id = aserv.Service.Id,
+                    Name = aserv.Service.Name,
+                    Cost = aserv.Service.Cost
+                }
+            }).ToList()
+        }).ToList()
+    });
+});
 
 // Post Endpoints
 
