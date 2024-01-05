@@ -252,9 +252,73 @@ app.MapGet("/api/customers/{id}", (HillarysHairSalonDbContext db, int id) =>
 });
 
 // 5. Endpoint to get all Services
-// 6. Endpoint to get a Service by Id
-// 7. Endpoint to get all Stylists
-// 8. Endpoint to get a Stylist by Id
+app.MapGet("/api/services", (HillarysHairSalonDbContext db) =>
+{
+    return db.Services
+        .Select(s => new ServiceDTO
+        {
+            Id = s.Id,
+            Name = s.Name,
+            Cost = s.Cost
+        }).ToList();
+});
+
+// 6. Endpoint to get all Stylists
+app.MapGet("/api/stylists", (HillarysHairSalonDbContext db) =>
+{
+    return db.Stylists
+        .Include(s => s.Appointments)
+            .ThenInclude(a => a.Customer)
+            .Include(s => s.Appointments)
+                .ThenInclude(a => a.AppointmentServices)
+                    .ThenInclude(aserv => aserv.Service)
+        .Select(s => new StylistDTO
+        {
+            Id = s.Id,
+            FirstName = s.FirstName,
+            LastName = s.LastName,
+            PhoneNumber = s.PhoneNumber,
+            Email = s.Email,
+            Password = s.Password,
+            StartDate = s.StartDate,
+            EndDate = s.EndDate,
+            IsActive = s.IsActive,
+            IsAdmin = s.IsAdmin,
+            Appointments = s.Appointments.Select(a => new AppointmentDTO
+            {
+                Id = a.Id,
+                StylistId =a.StylistId,
+                Stylist = null,
+                CustomerId = a.CustomerId,
+                Customer = new CustomerDTO
+                {
+                    Id = a.Customer.Id,
+                    FirstName = a.Customer.FirstName,
+                    LastName = a.Customer.LastName,
+                    PhoneNumber = a.Customer.PhoneNumber,
+                    Email = a.Customer.Email,
+                    Appointments = null
+                },
+                Scheduled = a.Scheduled,
+                IsComplete = a.IsComplete,
+                IsCanceled = a.IsCanceled,
+                AppointmentServices = a.AppointmentServices.Select(aserv => new AppointmentServiceDTO
+                {
+                    Id = aserv.Id,
+                    AppointmentId = aserv.AppointmentId,
+                    ServiceId = aserv.ServiceId,
+                    Service = new ServiceDTO
+                    {
+                        Id = aserv.Service.Id,
+                        Name = aserv.Service.Name,
+                        Cost = aserv.Service.Cost
+                    }
+                }).ToList()
+            }).ToList()
+        }).ToList();
+});
+
+// 7. Endpoint to get a Stylist by Id
 
 // Post Endpoints
 
