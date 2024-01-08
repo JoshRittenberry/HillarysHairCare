@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom"
 import { Button, Form, FormGroup, Input, Label, Row, Col } from "reactstrap"
 import { getStylistById } from "../../data/stylistsData"
 import { getServices } from "../../data/servicesData"
-import { getCustomers } from "../../data/customersData"
+import { createCustomer, getCustomers } from "../../data/customersData"
+import { createAppointment } from "../../data/appointmentsData"
 
 export const BookAppointment = () => {
     const [searchParams] = useSearchParams()
@@ -16,49 +17,93 @@ export const BookAppointment = () => {
     const [customer, setCustomer] = useState({})
     const [appointment, setAppointment] = useState({})
 
+    // useEffect(() => {
+    //     setTimeSlot(searchParams.get('timeSlot'))
+    //     getStylistById(searchParams.get('stylistId')).then(setStylist)
+    //     getCustomers().then(setCustomers)
+    //     getServices().then(setAvailableServices)
+    //     setCustomer({
+    //         firstName: "",
+    //         lastName: "",
+    //         phoneNumber: null,
+    //         email: ""
+    //     })
+    //     setAppointment({
+    //         stylistId: stylist?.id,
+    //         customerId: 0,
+    //         scheduled: timeSlot,
+    //         isComplete: false,
+    //         isCanceled: false
+    //     })
+    // }, [])
+
+    // const handleButtonClick = (event) => {
+    //     // Find a customer in the customers array that matches all properties of the customer state
+    //     const matchingCustomer = customers.find(c =>
+    //         c.firstName === customer.firstName &&
+    //         c.lastName === customer.lastName &&
+    //         c.phoneNumber === customer.phoneNumber &&
+    //         c.email === customer.email
+    //     )
+
+    //     if (matchingCustomer) {
+    //         // Perform action if a matching customer is found
+    //         console.log("Matching customer found:", matchingCustomer)
+    //         let update = {...appointment}
+    //         update.customerId = matchingCustomer.id
+    //         setAppointment(update)
+    //     } else {
+    //         // Perform action if no matching customer is found
+    //         console.log("No matching customer found.")
+    //         createCustomer(customer).then(res => {
+    //             console.log("New customer created:", res)
+    //             let update = {...appointment}
+    //             update.stylistId = stylist.id
+    //             update.customerId = res.id
+    //             update.scheduled = timeSlot
+    //             setAppointment(update)
+    //             console.log(appointment)
+    //             createAppointment(appointment).then(res => {console.log("New appointment created:", res)})
+    //         })
+    //     }
+    // }
+
     useEffect(() => {
         setTimeSlot(searchParams.get('timeSlot'))
         getStylistById(searchParams.get('stylistId')).then(setStylist)
         getCustomers().then(setCustomers)
         getServices().then(setAvailableServices)
-        setCustomer({
-            firstName: "",
-            lastName: "",
-            phoneNumber: null,
-            email: ""
-        })
-        setAppointment({
-            stylistId: stylist?.id,
-            customerId: 0,
-            scheduled: timeSlot,
-            isComplete: false,
-            isCanceled: false
-        })
     }, [])
 
-    const handleButtonClick = (event) => {
-        event.preventDefault();
+    useEffect(() => {
+        if (stylist && timeSlot) {
+            setAppointment(prev => ({
+                ...prev,
+                stylistId: stylist.id,
+                scheduled: timeSlot
+            }))
+        }
+    }, [stylist, timeSlot])
 
-        // Find a customer in the customers array that matches all properties of the customer state
-        const matchingCustomer = customers.find(c =>
+    const handleButtonClick = async (event) => {
+        let matchingCustomer = customers.find(c =>
             c.firstName === customer.firstName &&
             c.lastName === customer.lastName &&
             c.phoneNumber === customer.phoneNumber &&
-            c.email === customer.email
-        );
+            c.email === customer.email)
+        let updatedAppointment = { ...appointment }
 
         if (matchingCustomer) {
-            // Perform action if a matching customer is found
-            console.log("Matching customer found:", matchingCustomer)
-            let update = {...appointment}
-            update.customerId = matchingCustomer.id
-            setAppointment(update)
+            updatedAppointment.customerId = matchingCustomer.id
         } else {
-            // Perform action if no matching customer is found
-            console.log("No matching customer found.")
-            
+            let newCustomer = await createCustomer(customer)
+            updatedAppointment.customerId = newCustomer.id
         }
-    };
+
+        // Now make the API call with the updated appointment data
+        let appointmentResponse = await createAppointment(updatedAppointment)
+        console.log("New appointment created:", appointmentResponse)
+    }
 
     return (
         <div className="create-booking">
@@ -158,8 +203,8 @@ export const BookAppointment = () => {
                 </FormGroup>
                 <h3>Services</h3>
                 {availableServices.map(s => {
-                    return <>
-                        <FormGroup check>
+                    return (
+                        <FormGroup check key={s.id}>
                             <Input
                                 id={`service-${s.id}`}
                                 name="service"
@@ -172,7 +217,8 @@ export const BookAppointment = () => {
                                 {s.name}
                             </Label>
                         </FormGroup>
-                    </>
+                    )
+
                 })}
                 <Button onClick={handleButtonClick}>
                     Book Appointment
