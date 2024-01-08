@@ -12,6 +12,9 @@ function App() {
           <NavItem>
             <NavLink href="/appointments">Book Us</NavLink>
           </NavItem>
+          <NavItem>
+            <NavLink href="/appointments/view/customer">My Appointments</NavLink>
+          </NavItem>
         </Nav>
       </Navbar>
       <Outlet />
