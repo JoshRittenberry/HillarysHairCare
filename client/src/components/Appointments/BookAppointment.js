@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { Button, Form, FormGroup, Input, Label, Row, Col } from "reactstrap"
 import { getStylistById } from "../../data/stylistsData"
 import { getServices } from "../../data/servicesData"
@@ -9,6 +9,7 @@ import { createAppointmentService } from "../../data/appointmentServicesData"
 
 export const BookAppointment = () => {
     const [searchParams] = useSearchParams()
+    const navigate = useNavigate()
 
     const [timeSlot, setTimeSlot] = useState("")
     const [stylist, setStylist] = useState({})
@@ -78,6 +79,8 @@ export const BookAppointment = () => {
             }
             createAppointmentService(newAppointmentService)
         })
+
+        navigate("/")
     }
 
     return (
