@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { Button, FormGroup, Input, Label, Table } from "reactstrap"
 import { getStylists } from "../../data/stylistsData";
+import { useNavigate, Link } from "react-router-dom";
 
 export const FindAppointment = () => {
     const [date, setDate] = useState("")
     const [stylists, setStylists] = useState([])
     
+    const navigate = useNavigate()
+
     useEffect(() => {
         setDate(getCurrentDate)
         getStylists().then(setStylists)
@@ -19,16 +22,21 @@ export const FindAppointment = () => {
         return `${year}-${month}-${day}`;
     };
 
-
-
-    // Create an array of time slots
     const timeSlots = [];
     for (let hour = 9; hour <= 16; hour++) {
         const time = `${hour.toString().padStart(2, '0')}:00`;
         timeSlots.push(time);
     }
 
-    // Function to check if a time slot is booked
+    function convertTo12HrFormat(timeSlot) {
+        const [hours, minutes] = timeSlot.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const adjustedHour = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+
+        return `${adjustedHour}:${minutes}0 ${period}`;
+    }
+
+
     const isBooked = (timeSlot, stylist) => {
         return stylist.appointments.some(appointment => {
             const [appointmentDate, appointmentTime] = appointment.scheduled.split('T');
@@ -69,8 +77,15 @@ export const FindAppointment = () => {
                                     <tbody>
                                         {timeSlots.map(timeSlot => (
                                             <tr key={`timeSlot-${timeSlot}`}>
-                                                <td>{timeSlot}</td>
-                                                <td>{isBooked(timeSlot, stylist) ? 'Booked' : <Button>Book</Button>}</td>
+                                                <td>{convertTo12HrFormat(timeSlot)}</td>
+                                                <td>
+                                                    {isBooked(timeSlot, stylist) ? 'Not Available' :
+                                                        <Link to={`/appointments/book?stylistId=${stylist.id}&timeSlot=${date}T${timeSlot}:00`}>
+                                                            <Button>Book Now</Button>
+                                                        </Link>
+
+                                                    }
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
