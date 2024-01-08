@@ -1,9 +1,9 @@
-const _apiUrl = "/api/stylists"
+const _apiUrl = "/api/customers"
 
-export const getStylists = () => {
+export const getCustomers = () => {
     return fetch(_apiUrl).then((res) => res.json());
 }
 
-export const getStylistById = (id) => {
+export const getCustomerById = (id) => {
     return fetch(`${_apiUrl}/${id}`).then((res) => res.json());
 }

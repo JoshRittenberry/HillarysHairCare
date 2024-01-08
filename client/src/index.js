@@ -6,6 +6,7 @@ import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HomePage } from './components/Home/HomePage';
 import { FindAppointment } from './components/Appointments/FindAppointment';
+import { BookAppointment } from './components/Appointments/BookAppointment';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -14,8 +15,9 @@ root.render(
       <Route path="/" element={<App />}>
         <Route index element={<HomePage />} />
         <Route path="/appointments" element={<FindAppointment />}>
-          
+  
         </Route>
+        <Route path="/appointments/book" element={<BookAppointment />} />
       </Route>
     </Routes>
   </BrowserRouter>

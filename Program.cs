@@ -377,6 +377,47 @@ app.MapGet("/api/stylists/{id}", (HillarysHairSalonDbContext db, int id) =>
 
 // Post Endpoints
 
+// 1. Endpoint to create an Appointment
+app.MapPost("/api/appointments", (HillarysHairSalonDbContext db, Appointment appointment) =>
+{
+
+});
+
+// 2. Endpoint to create a Customer
+app.MapPost("/api/customers", (HillarysHairSalonDbContext db, Customer customer) =>
+{
+    try
+    {
+        db.Customers.Add(customer);
+        db.SaveChanges();
+
+        var newCustomer = db.Customers
+            .Include(c => c.Appointments)
+                .ThenInclude(a => a.AppointmentServices)
+                    .ThenInclude(aserv => aserv.Service)
+                .Include(c => c.Appointments)
+                    .ThenInclude(a => a.Stylist)
+            .FirstOrDefault(c => c.Id == customer.Id);
+
+        if (newCustomer == null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.Created($"/api/customers/{newCustomer.Id}", newCustomer);
+    }
+    catch (DbUpdateException)
+    {
+        return Results.BadRequest("Invalid data submitted");
+    }
+});
+
+// 3. Endpoint to create an AppointmentService
+app.MapPost("/api/customers", (HillarysHairSalonDbContext db, AppointmentService appointmentService) =>
+{
+
+});
+
 // Put Endpoints
 
 // Delete Endpoints
