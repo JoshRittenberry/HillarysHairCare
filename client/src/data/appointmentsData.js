@@ -5,5 +5,5 @@ export const createAppointment = (appointment) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(appointment),
-    })
+    }).then(res => res.json())
 }

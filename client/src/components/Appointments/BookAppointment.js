@@ -5,6 +5,7 @@ import { getStylistById } from "../../data/stylistsData"
 import { getServices } from "../../data/servicesData"
 import { createCustomer, getCustomers } from "../../data/customersData"
 import { createAppointment } from "../../data/appointmentsData"
+import { createAppointmentService } from "../../data/appointmentServicesData"
 
 export const BookAppointment = () => {
     const [searchParams] = useSearchParams()
@@ -16,57 +17,7 @@ export const BookAppointment = () => {
 
     const [customer, setCustomer] = useState({})
     const [appointment, setAppointment] = useState({})
-
-    // useEffect(() => {
-    //     setTimeSlot(searchParams.get('timeSlot'))
-    //     getStylistById(searchParams.get('stylistId')).then(setStylist)
-    //     getCustomers().then(setCustomers)
-    //     getServices().then(setAvailableServices)
-    //     setCustomer({
-    //         firstName: "",
-    //         lastName: "",
-    //         phoneNumber: null,
-    //         email: ""
-    //     })
-    //     setAppointment({
-    //         stylistId: stylist?.id,
-    //         customerId: 0,
-    //         scheduled: timeSlot,
-    //         isComplete: false,
-    //         isCanceled: false
-    //     })
-    // }, [])
-
-    // const handleButtonClick = (event) => {
-    //     // Find a customer in the customers array that matches all properties of the customer state
-    //     const matchingCustomer = customers.find(c =>
-    //         c.firstName === customer.firstName &&
-    //         c.lastName === customer.lastName &&
-    //         c.phoneNumber === customer.phoneNumber &&
-    //         c.email === customer.email
-    //     )
-
-    //     if (matchingCustomer) {
-    //         // Perform action if a matching customer is found
-    //         console.log("Matching customer found:", matchingCustomer)
-    //         let update = {...appointment}
-    //         update.customerId = matchingCustomer.id
-    //         setAppointment(update)
-    //     } else {
-    //         // Perform action if no matching customer is found
-    //         console.log("No matching customer found.")
-    //         createCustomer(customer).then(res => {
-    //             console.log("New customer created:", res)
-    //             let update = {...appointment}
-    //             update.stylistId = stylist.id
-    //             update.customerId = res.id
-    //             update.scheduled = timeSlot
-    //             setAppointment(update)
-    //             console.log(appointment)
-    //             createAppointment(appointment).then(res => {console.log("New appointment created:", res)})
-    //         })
-    //     }
-    // }
+    const [selectedServices, setSelectedServices] = useState([])
 
     useEffect(() => {
         setTimeSlot(searchParams.get('timeSlot'))
@@ -85,6 +36,22 @@ export const BookAppointment = () => {
         }
     }, [stylist, timeSlot])
 
+    const handleServiceCheck = (service) => {
+        setSelectedServices(prevSelectedServices => {
+            // Check if the service is already selected
+            const isServiceSelected = prevSelectedServices.some(selectedService => selectedService.id === service.id);
+
+            if (isServiceSelected) {
+                // If already selected, filter it out
+                return prevSelectedServices.filter(selectedService => selectedService.id !== service.id);
+            } else {
+                // Otherwise, add the new service
+                return [...prevSelectedServices, service];
+            }
+        });
+    };
+
+
     const handleButtonClick = async (event) => {
         let matchingCustomer = customers.find(c =>
             c.firstName === customer.firstName &&
@@ -101,8 +68,16 @@ export const BookAppointment = () => {
         }
 
         // Now make the API call with the updated appointment data
-        let appointmentResponse = await createAppointment(updatedAppointment)
-        console.log("New appointment created:", appointmentResponse)
+        let appointmentId = await createAppointment(updatedAppointment)
+        console.log("New appointment created!!", appointmentId)
+
+        selectedServices.map(aserv => {
+            let newAppointmentService = {
+                appointmentId: appointmentId,
+                serviceId: aserv.id
+            }
+            createAppointmentService(newAppointmentService)
+        })
     }
 
     return (
@@ -209,6 +184,7 @@ export const BookAppointment = () => {
                                 id={`service-${s.id}`}
                                 name="service"
                                 type="checkbox"
+                                onChange={() => {handleServiceCheck(s)}}
                             />
                             <Label
                                 check
@@ -218,9 +194,11 @@ export const BookAppointment = () => {
                             </Label>
                         </FormGroup>
                     )
-
                 })}
-                <Button onClick={handleButtonClick}>
+                <Button onClick={e => {
+                    e.preventDefault()
+                    handleButtonClick()
+                }}>
                     Book Appointment
                 </Button>
             </Form>

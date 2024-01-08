@@ -395,7 +395,7 @@ app.MapPost("/api/appointments", (HillarysHairSalonDbContext db, Appointment app
             return Results.NotFound();
         }
 
-        return Results.NoContent();
+        return Results.Ok(appointment.Id);
     }
     catch (DbUpdateException)
     {
@@ -435,7 +435,25 @@ app.MapPost("/api/customers", (HillarysHairSalonDbContext db, Customer customer)
 // 3. Endpoint to create an AppointmentService
 app.MapPost("/api/appointmentService", (HillarysHairSalonDbContext db, AppointmentService appointmentService) =>
 {
+    try
+    {
+        db.AppointmentServices.Add(appointmentService);
+        db.SaveChanges();
 
+        var newAppointmentService = db.AppointmentServices
+            .FirstOrDefault(aserv => aserv.Id == appointmentService.Id);
+
+        if (newAppointmentService == null)
+        {
+            return Results.NotFound();
+        }
+
+        return Results.NoContent();
+    }
+    catch (DbUpdateException)
+    {
+        return Results.BadRequest("Invalid data submitted");
+    }
 });
 
 // Put Endpoints
