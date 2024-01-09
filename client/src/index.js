@@ -9,6 +9,7 @@ import { FindAppointment } from './components/Appointments/FindAppointment';
 import { BookAppointment } from './components/Appointments/BookAppointment';
 import { CustomerLookup } from './components/Appointments/CustomerLookup';
 import { CustomerAppointmentList } from './components/Appointments/CustomerAppointmentList';
+import { EditAppointment } from './components/Appointments/EditAppointment';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -16,15 +17,14 @@ root.render(
     <Routes>
       <Route path="/" element={<App />}>
         <Route index element={<HomePage />} />
-        <Route path="/appointments" element={<FindAppointment />}>
-  
-        </Route>
-        <Route path="/appointments/book" element={<BookAppointment />}>
-
-        </Route>
+        <Route path="/appointments" element={<FindAppointment />} />
+        <Route path="/appointments/book" element={<BookAppointment />} />
         <Route path="/appointments/view/customer">
           <Route index element={<CustomerLookup />} />
           <Route path=":id" element={<CustomerAppointmentList />} />
+        </Route>
+        <Route path="/appointments/edit">
+          <Route path=":id" element={<EditAppointment />} />
         </Route>
       </Route>
     </Routes>

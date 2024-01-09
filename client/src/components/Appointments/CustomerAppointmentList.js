@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getCustomerById } from "../../data/customersData";
 import { Button, Table } from "reactstrap";
+import { cancelAppointment } from "../../data/appointmentsData";
 
 export const CustomerAppointmentList = () => {
     const params = useParams();
+    const navigate = useNavigate();
     const [customer, setCustomer] = useState({});
 
     useEffect(() => {
@@ -23,12 +25,12 @@ export const CustomerAppointmentList = () => {
 
     const hasUpcomingAppointments = () => {
         const today = getCurrentDate();
-        return customer.appointments?.some(a => new Date(a.scheduled) >= today);
+        return customer.appointments?.some(a => new Date(a.scheduled) >= today && !a.isCanceled);
     };
 
     const hasPreviousAppointments = () => {
         const today = getCurrentDate();
-        return customer.appointments?.some(a => new Date(a.scheduled) < today);
+        return customer.appointments?.some(a => new Date(a.scheduled) < today || a.isCanceled);
     };
 
     return (
@@ -53,7 +55,7 @@ export const CustomerAppointmentList = () => {
                                 const appointmentDate = new Date(a.scheduled);
                                 const today = getCurrentDate();
 
-                                if (appointmentDate >= today) {
+                                if (appointmentDate >= today && !a.isCanceled) {
                                     return (
                                         <tr key={a.id}>
                                             <td>{formatReadableDate(a.scheduled)}</td>
@@ -77,6 +79,24 @@ export const CustomerAppointmentList = () => {
                                                     window.alert(list); // Displaying the list in the alert
                                                 }}>Services</Button>
                                             </td>
+                                            {!a.isCanceled && (
+                                                <>
+                                                    <td>
+                                                        <Button onClick={() => {
+                                                            navigate(`/appointments/edit/${a.id}`)
+                                                        }}>
+                                                            Edit
+                                                        </Button>
+                                                    </td>
+                                                    <td>
+                                                        <Button className="btn-danger" onClick={() => {
+                                                            cancelAppointment(a.id).then(window.location.reload())
+                                                        }}>
+                                                            Cancel
+                                                        </Button>
+                                                    </td>
+                                                </>
+                                            )}
                                         </tr>
                                     );
                                 }
@@ -90,7 +110,7 @@ export const CustomerAppointmentList = () => {
             
             {/* Previous Appointments */}
             <section>
-                <h3>Previous Appointments</h3>
+                <h3>Previous or Canceled Appointments</h3>
                 {hasPreviousAppointments() ? (
                     <Table>
                         <thead>
@@ -106,7 +126,7 @@ export const CustomerAppointmentList = () => {
                                 const appointmentDate = new Date(a.scheduled);
                                 const today = getCurrentDate();
 
-                                if (appointmentDate <= today) {
+                                if (appointmentDate <= today || a.isCanceled) {
                                     return (
                                         <tr key={a.id}>
                                             <td>{formatReadableDate(a.scheduled)}</td>
@@ -137,7 +157,7 @@ export const CustomerAppointmentList = () => {
                         </tbody>
                     </Table>
                 ) : (
-                    <p>No Previous Appointments</p>
+                    <p>No Previous or Canceled Appointments</p>
                 )}
             </section>
         </>

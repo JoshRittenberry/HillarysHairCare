@@ -7,3 +7,9 @@ export const createAppointmentService = (appointmentService) => {
         body: JSON.stringify(appointmentService),
     })
 }
+
+export const deleteAppointmentService = (appointmentServiceId) => {
+    return fetch(`${_apiUrl}/${appointmentServiceId}`, {
+        method: "DELETE"
+    })
+}

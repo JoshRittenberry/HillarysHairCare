@@ -1,87 +1,73 @@
 import { useEffect, useState } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { Button, Form, FormGroup, Input, Label, Row, Col } from "reactstrap"
-import { getStylistById } from "../../data/stylistsData"
 import { getServices } from "../../data/servicesData"
-import { createCustomer, getCustomers } from "../../data/customersData"
-import { createAppointment } from "../../data/appointmentsData"
-import { createAppointmentService } from "../../data/appointmentServicesData"
+import { getAppointmentById } from "../../data/appointmentsData"
+import { createAppointmentService, deleteAppointmentService } from "../../data/appointmentServicesData"
 
-export const BookAppointment = () => {
-    const [searchParams] = useSearchParams()
+export const EditAppointment = () => {
+    const params = useParams()
     const navigate = useNavigate()
 
-    const [timeSlot, setTimeSlot] = useState("")
-    const [stylist, setStylist] = useState({})
-    const [customers, setCustomers] = useState([])
-    const [availableServices, setAvailableServices] = useState([])
-
-    const [customer, setCustomer] = useState({})
     const [appointment, setAppointment] = useState({})
+    const [availableServices, setAvailableServices] = useState([])
     const [selectedServices, setSelectedServices] = useState([])
 
-    useEffect(() => {
-        setTimeSlot(searchParams.get('timeSlot'))
-        getStylistById(searchParams.get('stylistId')).then(setStylist)
-        getCustomers().then(setCustomers)
-        getServices().then(setAvailableServices)
-    }, [])
+    console.log(params)
 
     useEffect(() => {
-        if (stylist && timeSlot) {
-            setAppointment(prev => ({
-                ...prev,
-                stylistId: stylist.id,
-                scheduled: timeSlot
-            }))
-        }
-    }, [stylist, timeSlot])
+        getAppointmentById(params.id).then(res => {
+            setAppointment(res)
+            setSelectedServices(res.appointmentServices.map(as => as.service))
+        })
+        getServices().then(setAvailableServices)
+    }, [])
 
     const handleServiceCheck = (service) => {
         setSelectedServices(prevSelectedServices => {
             // Check if the service is already selected
-            const isServiceSelected = prevSelectedServices.some(selectedService => selectedService.id === service.id);
+            const isServiceSelected = prevSelectedServices.some(selectedService => selectedService.id === service.id)
 
             if (isServiceSelected) {
                 // If already selected, filter it out
-                return prevSelectedServices.filter(selectedService => selectedService.id !== service.id);
+                return prevSelectedServices.filter(selectedService => selectedService.id !== service.id)
             } else {
                 // Otherwise, add the new service
-                return [...prevSelectedServices, service];
+                return [...prevSelectedServices, service]
             }
-        });
-    };
-
-
-    const handleButtonClick = async (event) => {
-        let matchingCustomer = customers.find(c =>
-            c.firstName === customer.firstName &&
-            c.lastName === customer.lastName &&
-            c.phoneNumber === customer.phoneNumber &&
-            c.email === customer.email)
-        let updatedAppointment = { ...appointment }
-
-        if (matchingCustomer) {
-            updatedAppointment.customerId = matchingCustomer.id
-        } else {
-            matchingCustomer = await createCustomer(customer)
-            updatedAppointment.customerId = matchingCustomer.id
-        }
-
-        // Now make the API call with the updated appointment data
-        let appointmentId = await createAppointment(updatedAppointment)
-        console.log("New appointment created!!", appointmentId)
-
-        selectedServices.map(aserv => {
-            let newAppointmentService = {
-                appointmentId: appointmentId,
-                serviceId: aserv.id
-            }
-            createAppointmentService(newAppointmentService)
         })
-
-        navigate(`/appointments/view/customer/${matchingCustomer.id}`)
     }
+
+
+    const handleButtonClick = async () => {
+        // Create an array to hold all the promises from the addition of new services
+        let additionPromises = selectedServices.map(sserv => {
+            if (!appointment.appointmentServices.some(aserv => aserv.serviceId === sserv.id)) {
+                let newAppointmentService = {
+                    appointmentId: appointment.id,
+                    serviceId: sserv.id
+                };
+                return createAppointmentService(newAppointmentService); // Return the promise
+            }
+            return Promise.resolve(); // Return a resolved promise for services that don't need addition
+        });
+
+        // Create an array to hold all the promises from the removal of unselected services
+        let removalPromises = appointment.appointmentServices.map(aserv => {
+            if (!selectedServices.some(sserv => sserv.id === aserv.serviceId)) {
+                return deleteAppointmentService(aserv.id); // Return the promise
+            }
+            return Promise.resolve(); // Return a resolved promise for services that don't need removal
+        });
+
+        // Wait for all addition and removal operations to complete
+        await Promise.all([...additionPromises, ...removalPromises]);
+
+        // After all operations are complete, navigate
+        navigate(`/appointments/view/customer/${appointment.customerId}`);
+    }
+
+
 
     return (
         <div className="create-booking">
@@ -95,7 +81,7 @@ export const BookAppointment = () => {
                                 id="stylistName"
                                 name="stylistName"
                                 type="text"
-                                value={`${stylist.firstName} ${stylist.lastName}`}
+                                value={`${appointment.stylist?.firstName} ${appointment.stylist?.lastName}`}
                                 readOnly
                             />
                         </FormGroup>
@@ -106,7 +92,7 @@ export const BookAppointment = () => {
                                 id="bookDate"
                                 name="bookDate"
                                 type="date"
-                                value={timeSlot}
+                                value={appointment.scheduled}
                                 readOnly
                             />
                         </FormGroup>
@@ -121,12 +107,8 @@ export const BookAppointment = () => {
                                 name="bookFirstName"
                                 placeholder="First Name"
                                 type="text"
-                                value={customer.firstName}
-                                onChange={event => {
-                                    let update = {...customer}
-                                    update.firstName = event.target.value
-                                    setCustomer(update)
-                                }}
+                                value={appointment.customer?.firstName}
+                                readOnly
                             />
                         </FormGroup>
                     </Col>
@@ -137,12 +119,8 @@ export const BookAppointment = () => {
                                 name="bookLastName"
                                 placeholder="Last Name"
                                 type="text"
-                                value={customer.lastName}
-                                onChange={event => {
-                                    let update = { ...customer }
-                                    update.lastName = event.target.value
-                                    setCustomer(update)
-                                }}
+                                value={appointment.customer?.lastName}
+                                readOnly
                             />
                         </FormGroup>
                     </Col>
@@ -154,12 +132,8 @@ export const BookAppointment = () => {
                         name="bookEmail"
                         placeholder="Email"
                         type="email"
-                        value={customer.email}
-                        onChange={event => {
-                            let update = { ...customer }
-                            update.email = event.target.value
-                            setCustomer(update)
-                        }}
+                        value={appointment.customer?.email}
+                        readOnly
                     />
                 </FormGroup>
                 {/* Customer Phone Number Input */}
@@ -169,14 +143,8 @@ export const BookAppointment = () => {
                         name="bookPhone"
                         placeholder="Phone Number"
                         type="tel"
-                        value={customer.phoneNumber}
-                        onChange={event => {
-                            let update = { ...customer }
-                            if (parseInt(event.target.value) !== null) {
-                                update.phoneNumber = parseInt(event.target.value)
-                                setCustomer(update)
-                            }
-                        }}
+                        value={appointment.customer?.phoneNumber}
+                        readOnly
                     />
                 </FormGroup>
                 <h3>Services</h3>
@@ -187,7 +155,8 @@ export const BookAppointment = () => {
                                 id={`service-${s.id}`}
                                 name="service"
                                 type="checkbox"
-                                onChange={() => {handleServiceCheck(s)}}
+                                checked={selectedServices?.some(selectedService => selectedService.id === s.id)}
+                                onChange={() => handleServiceCheck(s)}
                             />
                             <Label
                                 check
@@ -202,7 +171,12 @@ export const BookAppointment = () => {
                     e.preventDefault()
                     handleButtonClick()
                 }}>
-                    Book Appointment
+                    Save Changes
+                </Button>
+                <Button className="btn-danger" onClick={() => {
+                    navigate(`/appointments/view/customer/${appointment.customerId}`)
+                }}>
+                    Cancel
                 </Button>
             </Form>
         </div>

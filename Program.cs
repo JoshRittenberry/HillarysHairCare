@@ -458,6 +458,33 @@ app.MapPost("/api/appointmentService", (HillarysHairSalonDbContext db, Appointme
 
 // Put Endpoints
 
+// 1. Endpiont to change an Appointment to Canceled
+app.MapPut("/api/appointments/cancel/{id}", (HillarysHairSalonDbContext db, int id) =>
+{
+    Appointment appointmentToCancel = db.Appointments.SingleOrDefault(appointment => appointment.Id == id);
+    if (appointmentToCancel == null)
+    {
+        return Results.NotFound();
+    }
+    appointmentToCancel.IsCanceled = !appointmentToCancel.IsCanceled;
+
+    db.SaveChanges();
+    return Results.NoContent();
+});
+
 // Delete Endpoints
+
+// 1. Endpoint to delete an Appointment Service
+app.MapDelete("/api/appointmentService/{id}", (HillarysHairSalonDbContext db, int id) =>
+{
+    AppointmentService appointmentService = db.AppointmentServices.SingleOrDefault(appointmentService => appointmentService.Id == id);
+    if (appointmentService == null)
+    {
+        return Results.NotFound();
+    }
+    db.AppointmentServices.Remove(appointmentService);
+    db.SaveChanges();
+    return Results.NoContent();
+});
 
 app.Run();
